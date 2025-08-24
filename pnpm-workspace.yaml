@@ -1,0 +1,8 @@
+packages:
+  - 'web'
+  - 'api'
+  - 'contracts'
+  - 'subgraph'
+  - 'ui'
+  - 'db'
+  - 'scripts'

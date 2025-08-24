@@ -1,0 +1,172 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  avatar    String?
+  bio       String?
+  country   String?
+  city      String?
+  phone     String?
+  isVerified Boolean @default(false)
+  isKycVerified Boolean @default(false)
+  kycStatus String @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  markets   Market[]
+  trades    Trade[]
+  wallets   Wallet[]
+  favorites Favorite[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Market {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // POLITICS, SPORTS, CRYPTO, ELECTIONS, ECONOMY, FOOTBALL
+  type        String   // YES_NO, MULTIPLE_CHOICE
+  outcomes    Outcome[]
+  totalVolume Float    @default(0)
+  totalTrades Int      @default(0)
+  status      String   @default("ACTIVE") // ACTIVE, RESOLVED, CANCELLED
+  endDate     DateTime
+  resolutionDate DateTime?
+  resolvedOutcome String?
+  imageUrl    String?
+  tags        String[]
+  isFeatured  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String
+  user        User     @relation(fields: [createdBy], references: [id])
+
+  // Relations
+  trades      Trade[]
+  favorites   Favorite[]
+
+  @@map("markets")
+}
+
+model Outcome {
+  id          String   @id @default(cuid())
+  marketId    String
+  market      Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  probability Float    @default(0.5)
+  volume      Float    @default(0)
+  trades      Int      @default(0)
+  isResolved  Boolean  @default(false)
+  isWinner    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("outcomes")
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+  userId      String
+  marketId    String
+  outcomeId   String
+  amount      Float
+  outcome     String   // YES, NO, or outcome name
+  stake       Float
+  potentialPayout Float
+  status      String   @default("ACTIVE") // ACTIVE, SETTLED, CANCELLED
+  payout      Float?
+  settledAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id])
+  market      Market   @relation(fields: [marketId], references: [id])
+
+  @@map("trades")
+}
+
+model Wallet {
+  id          String   @id @default(cuid())
+  userId      String
+  currency    String   // USD, KES, NGN, ZAR, USDC, USDT
+  balance     Float    @default(0)
+  lockedBalance Float  @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@unique([userId, currency])
+  @@map("wallets")
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  walletId    String
+  type        String   // DEPOSIT, WITHDRAWAL, TRADE, PAYOUT
+  amount      Float
+  currency    String
+  status      String   @default("PENDING") // PENDING, COMPLETED, FAILED, CANCELLED
+  reference   String?  @unique
+  description String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  wallet      Wallet   @relation(fields: [walletId], references: [id])
+
+  @@map("transactions")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  marketId  String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+  market    Market   @relation(fields: [marketId], references: [id])
+
+  @@unique([userId, marketId])
+  @@map("favorites")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // TRADE, MARKET_RESOLVED, PAYMENT, SYSTEM
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}

@@ -1,0 +1,44 @@
+type Market @entity {
+  id: ID!
+  title: String!
+  description: String
+  endTime: BigInt!
+  resolvedOutcome: String
+  resolved: Boolean!
+  totalLiquidity: BigInt!
+  totalVolume: BigInt!
+  creator: User!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  bets: [Bet!]! @derivedFrom(field: market)
+  outcomes: [Outcome!]! @derivedFrom(field: market)
+}
+
+type Outcome @entity {
+  id: ID!
+  market: Market!
+  name: String!
+  totalStake: BigInt!
+  totalBets: BigInt!
+  exists: Boolean!
+}
+
+type Bet @entity {
+  id: ID!
+  user: User!
+  market: Market!
+  outcome: String!
+  amount: BigInt!
+  potentialPayout: BigInt!
+  claimed: Boolean!
+  timestamp: BigInt!
+}
+
+type User @entity {
+  id: ID!
+  markets: [Market!]! @derivedFrom(field: creator)
+  bets: [Bet!]! @derivedFrom(field: user)
+  totalBets: BigInt!
+  totalWinnings: BigInt!
+  totalStake: BigInt!
+}
